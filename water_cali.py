@@ -30,7 +30,10 @@ class WaterCali:
     CMD_STOP_CONTINUOUS_MEASUREMENT = [0x3F, 0xF9]
     CMD_READ_MEASUREMENT = [0xE1, 0x02]
     CMD_SOFT_RESET = [0x00, 0x06]
-    CMD_READ_PRODUCT_ID = [0xE1, 0x02]
+    
+    # Define command constants
+    CMD_READ_PRODUCT_ID_1 = [0x36, 0x7C]  # First part of the Read Product Identifier command
+    CMD_READ_PRODUCT_ID_2 = [0xE1, 0x02]  # Second part of the Read Product Identifier command
     
     def __init__(self, i2c_bus: int = 1):
         """
@@ -59,32 +62,51 @@ class WaterCali:
     
     def test_i2c(self) -> bool:
         """
-        Test I2C connection with the flow meter.
-        
+        Test I2C connection with the flow meter by reading the product identifier.
+    
         Returns:
             bool: True if connection successful, False otherwise
         """
         if self.bus is None:
             print("I2C connection to flow meter failed - bus not initialized")
             return False
-            
+    
         try:
-            # Try to read from the device to test connection
-            # We'll attempt a soft reset command which should be acknowledged
+            # Send the Read Product Identifier command using defined constants
             self.bus.write_i2c_block_data(
                 self.FLOW_METER_ADDRESS, 
-                self.CMD_SOFT_RESET[0], 
-                [self.CMD_SOFT_RESET[1]]
+                self.CMD_READ_PRODUCT_ID_1[0],  # First byte of the first command
+                [self.CMD_READ_PRODUCT_ID_1[1]]  # Second byte of the first command
             )
-            
-            # Small delay after reset
-            time.sleep(0.1)
-            
+            time.sleep(0.01)  # Small delay between commands
+            self.bus.write_i2c_block_data(
+                self.FLOW_METER_ADDRESS, 
+                self.CMD_READ_PRODUCT_ID_2[0],  # First byte of the second command
+                [self.CMD_READ_PRODUCT_ID_2[1]]  # Second byte of the second command
+            )
+    
+            # Read 18 bytes of response data
+            data = self.bus.read_i2c_block_data(self.FLOW_METER_ADDRESS, 0x00, 18)
+    
+            # Extract product number (bytes 1-4)
+            product_number = (data[0] << 24) | (data[1] << 16) | (data[3] << 8) | data[4]
+    
+            # Extract serial number (bytes 7-14)
+            serial_number = (
+                (data[6] << 56) | (data[7] << 48) | (data[8] << 40) | (data[9] << 32) |
+                (data[10] << 24) | (data[11] << 16) | (data[12] << 8) | data[13]
+            )
+    
+            # Log the product and serial numbers
+            print(f"Product Number: {product_number}")
+            print(f"Serial Number: {serial_number}")
+            self.logger.info(f"Product Number: {product_number}, Serial Number: {serial_number}")
+    
             # If we get here without exception, connection is working
             print("I2C connection to flow meter successful")
             self.logger.info("SLF3S-1300F flow meter detected and responding")
             return True
-            
+    
         except OSError as e:
             if e.errno == 121:  # Remote I/O error - device not found
                 print("I2C connection to flow meter failed - device not found")
