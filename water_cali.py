@@ -1,6 +1,6 @@
 """
 WaterCali - Water Flow Calibration System for SLF3S-1300F Flow Meter
-Designed for Raspberry Pi 4B with USB-I2C dongle
+Designed for Raspberry Pi 4B with native I2C interface
 """
 
 import time
@@ -16,7 +16,7 @@ except ImportError:
 
 class WaterCali:
     """
-    Water calibration class for SLF3S-1300F flow meter via USB-I2C interface.
+    Water calibration class for SLF3S-1300F flow meter via Raspberry Pi native I2C interface.
     
     The SLF3S-1300F is a liquid flow sensor that communicates via I2C protocol.
     Default I2C address is 0x08.
