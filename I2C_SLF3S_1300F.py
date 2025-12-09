@@ -60,6 +60,31 @@ class WaterCali:
         except Exception as e:
             self.logger.error(f"Failed to initialize I2C bus {self.i2c_bus}: {e}")
     
+    def soft_reset(self) -> bool:
+        """
+        Perform a soft reset of the SLF3S-1300F sensor.
+        
+        Returns:
+            bool: True if reset successful, False otherwise
+        """
+        if self.bus is None:
+            self.logger.error("Cannot reset - I2C bus not initialized")
+            return False
+        
+        try:
+            self.bus.write_i2c_block_data(
+                self.FLOW_METER_ADDRESS,
+                self.CMD_SOFT_RESET[0],
+                [self.CMD_SOFT_RESET[1]]
+            )
+            time.sleep(0.1)  # Wait for reset to complete
+            self.measuring = False
+            self.logger.info("Soft reset completed")
+            return True
+        except Exception as e:
+            self.logger.error(f"Soft reset failed: {e}")
+            return False
+        
     def test_i2c(self) -> bool:
         """
         Test I2C connection with the flow meter by reading the product identifier.
@@ -111,6 +136,8 @@ class WaterCali:
             if e.errno == 121:  # Remote I/O error - device not found
                 print("I2C connection to flow meter failed - device not found")
                 self.logger.error("SLF3S-1300F not found on I2C bus")
+                self.soft_reset()
+                
             else:
                 print(f"I2C connection to flow meter failed - {e}")
                 self.logger.error(f"I2C communication error: {e}")
