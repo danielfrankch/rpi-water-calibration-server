@@ -1,4 +1,4 @@
-from water_cali import WaterCali
+from I2C_SLF3S_1300F import WaterCali
 
 water_cali = WaterCali()
 
