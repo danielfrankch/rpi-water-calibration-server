@@ -192,7 +192,7 @@ class WaterCali:
             print(f"Failed to stop flow measurement: {e}")
             return False
     
-    def read_flow(self) -> Optional[Tuple[float, float]]:
+    def read_flow(self):
         """
         Read flow and temperature values from the sensor.
         Must be called after start_measure().
@@ -209,8 +209,8 @@ class WaterCali:
             return None
             
         try:
-            # Read 9 bytes: 2 bytes flow + 1 CRC + 2 bytes temp + 1 CRC + 2 bytes aux + 1 CRC
-            data = self.bus.read_i2c_block_data(self.FLOW_METER_ADDRESS, 0x00, 9)
+            # Read 3 bytes: 2 bytes flow + 1 CRC
+            data = self.bus.read_i2c_block_data(self.FLOW_METER_ADDRESS, 0x00, 3)
             
             # Extract flow data (first 2 bytes)
             flow_raw = (data[0] << 8) | data[1]
@@ -218,20 +218,11 @@ class WaterCali:
             if flow_raw > 32767:
                 flow_raw -= 65536
                 
-            # Extract temperature data (bytes 3-4)
-            temp_raw = (data[3] << 8) | data[4]
-            # Convert to signed 16-bit
-            if temp_raw > 32767:
-                temp_raw -= 65536
-            
             # Convert to physical units based on datasheet
             # Flow: scaling factor and offset depend on calibration
             flow_ml_min = flow_raw / 500  # Scaling for SLF3S-1300F
             
-            # Temperature: scaling factor from datasheet
-            temp_celsius = temp_raw / 200.0
-            
-            return (flow_ml_min, temp_celsius)
+            return (flow_ml_min)
             
         except Exception as e:
             self.logger.error(f"Failed to read flow data: {e}")

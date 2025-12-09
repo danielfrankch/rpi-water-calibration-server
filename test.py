@@ -24,18 +24,14 @@ if water_cali.test_i2c():
                     # Read flow data
                     result = water_cali.read_flow()
                     if result:
-                        flow, temp = result
+                        flow = result
                         timestamp_ms = int((current_time - start_time) * 1000)
                         
                         # Buffer data instead of writing immediately
-                        data_buffer.append([timestamp_ms, flow, temp])  # Use list for speed
+                        data_buffer.append([timestamp_ms, flow])  # Use list for speed
                         
                         measurement_count += 1
                         next_measurement_time += 0.002  # Schedule next measurement in 1ms (1000Hz)
-                    
-                    # Print progress every 2500 measurements to reduce overhead
-                    if measurement_count % 500 == 0:
-                        print(f"Measurements: {measurement_count}")
                 
                 # Small sleep to prevent busy waiting and allow other processes
                 else:
