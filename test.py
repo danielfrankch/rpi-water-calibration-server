@@ -9,7 +9,7 @@ if water_cali.test_i2c():
     print("Ready to measure!")
     
     if water_cali.start_measure():
-        print("Starting 500Hz data collection for 10 seconds...")
+        print("Starting 1000Hz data collection for 10 seconds...")
         start_time = time.time()
         measurement_count = 0
         data_buffer = []  # Buffer to store all measurements
@@ -31,7 +31,7 @@ if water_cali.test_i2c():
                         data_buffer.append([timestamp_ms, flow, temp])  # Use list for speed
                         
                         measurement_count += 1
-                        next_measurement_time += 0.002  # Schedule next measurement in 2ms (500Hz)
+                        next_measurement_time += 0.001  # Schedule next measurement in 1ms (1000Hz)
                     
                     # Print progress every 2500 measurements to reduce overhead
                     if measurement_count % 2500 == 0:
