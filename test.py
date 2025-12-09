@@ -46,7 +46,7 @@ if water_cali.test_i2c():
         
         # Write all buffered data to CSV at once
         with open('flow_data.csv', 'w', newline='') as csvfile:
-            fieldnames = ['timestamp_ms', 'flow_rate_ml_min', 'temperature_c']
+            fieldnames = ['timestamp_ms', 'flow_rate_ml_min']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             
@@ -55,7 +55,6 @@ if water_cali.test_i2c():
                 writer.writerow({
                     'timestamp_ms': data_point[0],
                     'flow_rate_ml_min': data_point[1],
-                    'temperature_c': data_point[2]
                 })
         
         print(f"Data saved to flow_data.csv")
