@@ -31,7 +31,7 @@ if water_cali.test_i2c():
                         data_buffer.append([timestamp_ms, flow])  # Use list for speed
                         
                         measurement_count += 1
-                        next_measurement_time += 0.002  # Schedule next measurement in 1ms (1000Hz)
+                        next_measurement_time += 0.001  # Schedule next measurement in 1ms (1000Hz)
                 
                 # Small sleep to prevent busy waiting and allow other processes
                 else:
