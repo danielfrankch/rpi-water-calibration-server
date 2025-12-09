@@ -9,44 +9,43 @@ if water_cali.test_i2c():
     print("Ready to measure!")
     
     if water_cali.start_measure():
-        print("Starting 1000Hz data collection for 10 seconds...")
+        print("Starting maximum speed data collection for 10 seconds...")
         start_time = time.time()
         measurement_count = 0
         data_buffer = []  # Buffer to store all measurements
+        next_measurement_time = start_time
         
         try:
             while time.time() - start_time < 10.0:  # Run for 10 seconds
-                measurement_start = time.time()
+                current_time = time.time()
                 
-                # Read flow data
-                result = water_cali.read_flow()
-                if result:
-                    flow, temp = result
-                    timestamp_ms = int((time.time() - start_time) * 1000)
+                # Only measure if we've reached the next scheduled time
+                if current_time >= next_measurement_time:
+                    # Read flow data
+                    result = water_cali.read_flow()
+                    if result:
+                        flow, temp = result
+                        timestamp_ms = int((current_time - start_time) * 1000)
+                        
+                        # Buffer data instead of writing immediately
+                        data_buffer.append([timestamp_ms, flow, temp])  # Use list for speed
+                        
+                        measurement_count += 1
+                        next_measurement_time += 0.001  # Schedule next measurement in 1ms
                     
-                    # Buffer data instead of writing immediately
-                    data_buffer.append({
-                        'timestamp_ms': timestamp_ms,
-                        'flow_rate_ml_min': flow,
-                        'temperature_c': temp
-                    })
-                    
-                    measurement_count += 1
-                    
-                    # Print progress every 1000 measurements (less frequent to avoid delays)
-                    if measurement_count % 2000 == 0:
+                    # Print progress every 5000 measurements to reduce overhead
+                    if measurement_count % 5000 == 0:
                         print(f"Measurements: {measurement_count}")
                 
-                # Calculate delay to maintain 1000Hz (1ms intervals)
-                elapsed = time.time() - measurement_start
-                delay = 0.001 - elapsed  # Target 1ms interval
-                if delay > 0:
-                    time.sleep(delay)
+                # Small sleep to prevent busy waiting and allow other processes
+                else:
+                    time.sleep(0.0001)  # 0.1ms sleep when not measuring
                     
         except KeyboardInterrupt:
             print("\nMeasurement interrupted by user")
         
         print(f"Data collection complete. Total measurements: {measurement_count}")
+        print(f"Actual sampling rate: {measurement_count/10.0:.1f} Hz")
         print("Writing data to CSV file...")
         
         # Write all buffered data to CSV at once
@@ -54,7 +53,14 @@ if water_cali.test_i2c():
             fieldnames = ['timestamp_ms', 'flow_rate_ml_min', 'temperature_c']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerows(data_buffer)
+            
+            # Convert list data back to dict format for CSV writing
+            for data_point in data_buffer:
+                writer.writerow({
+                    'timestamp_ms': data_point[0],
+                    'flow_rate_ml_min': data_point[1],
+                    'temperature_c': data_point[2]
+                })
         
         print(f"Data saved to flow_data.csv")
         
