@@ -226,7 +226,7 @@ class WaterCali:
             
             # Convert to physical units based on datasheet
             # Flow: scaling factor and offset depend on calibration
-            flow_ml_min = flow_raw / 120.0  # Approximate scaling for SLF3S-1300F
+            flow_ml_min = flow_raw / 500  # Scaling for SLF3S-1300F
             
             # Temperature: scaling factor from datasheet
             temp_celsius = temp_raw / 200.0
