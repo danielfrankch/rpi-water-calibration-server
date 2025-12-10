@@ -9,14 +9,14 @@ if water_cali.test_i2c():
     print("Ready to measure!")
     
     if water_cali.start_measure():
-        print("Starting 500Hz data collection for 10 seconds...")
+        print("Starting data collection...")
         start_time = time.time()
         measurement_count = 0
         data_buffer = []  # Buffer to store all measurements
         next_measurement_time = start_time
         
         try:
-            while time.time() - start_time < 10.0:  # Run for 10 seconds
+            while time.time() - start_time < 400.0:  # Run for 400 seconds
                 current_time = time.time()
                 
                 # Only measure if we've reached the next scheduled time
@@ -41,7 +41,7 @@ if water_cali.test_i2c():
             print("\nMeasurement interrupted by user")
         
         print(f"Data collection complete. Total measurements: {measurement_count}")
-        print(f"Actual sampling rate: {measurement_count/10.0:.1f} Hz")
+        print(f"Actual sampling rate: {measurement_count/400.0:.1f} Hz")
         print("Writing data to CSV file...")
         
         # Write all buffered data to CSV at once
