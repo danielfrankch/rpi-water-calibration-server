@@ -13,7 +13,7 @@ from I2C_SLF3S_1300F import WaterCali
 
 # Global variables
 sample_frequency = 500  # Hz
-vol_queue = None  # Stores volume in microliters (μL)
+vol_queue = None  # Stores volume in milliliters (mL)
 
 def get_local_ip():
     """Get the local IP address of the machine"""
@@ -47,12 +47,6 @@ def parse_measure_command(message):
 def perform_water_measurement(duration):
     """
     Perform water flow measurement for the specified duration
-    
-    Args:
-        duration (float): Measurement duration in seconds
-        
-    Returns:
-        tuple: (success_flag, result_message, volume_ul)
     """
     global vol_queue
     
@@ -113,19 +107,16 @@ def perform_water_measurement(duration):
             dv_ml = avg_flow * dt_min
             total_volume_ml += dv_ml
         
-        # Convert to microliters (μL)
-        total_volume_ul = total_volume_ml * 1000.0
-        
         # Store in global queue
-        vol_queue = total_volume_ul
+        vol_queue = total_volume_ml
         
         print(f"Measurement complete: {measurement_count} samples, "
-              f"Total volume: {total_volume_ul:.2f} μL")
+              f"Total volume: {total_volume_ml:.2f} mL")
         
-        return "1", total_volume_ul
+        return True, total_volume_ml
         
     except Exception as e:
-        return f"error: {str(e)}", None
+        return False, f"error: {str(e)}"
     finally:
         water_cali.close()
 
@@ -154,17 +145,12 @@ def handle_message(message):
         
         # Perform measurement in a separate thread to avoid blocking
         success, volume = perform_water_measurement(duration)
-        return success
-    
-    # Case 2: water.read_last_vol
-    elif message == 'water.read_last_vol':
-        if vol_queue is None:
-            return "error: no vol available"
+        if success:
+            return volume
         else:
-            # Return the volume and reset queue
-            volume = vol_queue
-            vol_queue = None
-            return str(volume)
+            print(f"Measurement failed: {volume}")
+            return volume
+            
     
     else:
         return "error: Unknown command"
