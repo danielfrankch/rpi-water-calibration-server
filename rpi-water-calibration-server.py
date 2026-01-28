@@ -182,7 +182,7 @@ def start_server():
                 print(f"Sending response: {response}")
                 
                 # Send reply back to client
-                socket_zmq.send_string(response)
+                socket_zmq.send_string(str(response))
                 
             except zmq.Again:
                 # No message available, continue polling
