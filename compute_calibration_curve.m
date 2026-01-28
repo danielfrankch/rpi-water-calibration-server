@@ -1,6 +1,6 @@
 clear
 clc
-
+load CrossValidate.mat
 % Open a file selection dialog for a CSV file
 [filename, pathname] = uigetfile({'*.csv', 'CSV Files (*.csv)'}, ...
                                  'Select a CSV file');
@@ -21,7 +21,13 @@ df = readtable(filepath);
 disp('CSV file successfully loaded into table variable "df".');
 
 
-%% Ensure timestamps are in milliseconds and flow in mL/min
+% Ensure timestamps are in milliseconds and flow in mL/min
+% Low-pass filter the flow rate data
+% fc = 0.01; % Cutoff frequency in Hz
+% fs = 500; % Sampling frequency in Hz (adjust based on your data)
+% df.flow_rate_ml_min_filtered = lowpass(df.flow_rate_ml_min, fc, fs);
+% df.flow_rate_ml_min = df.flow_rate_ml_min_filtered;
+
 t = df.timestamp_ms;          % ms
 flow = df.flow_rate_ml_min;   % mL/min
 
@@ -37,7 +43,9 @@ dV_mL = flow_mL_per_ms .* dt;
 % Cumulative volume (µL)
 df.vol_ul = cumsum(dV_mL) * 1000;   % convert mL to µL
 
-%%
+
+
+
 close all
 ax = draw.jaxes;
 ax.Position = [0.2,0.2,0.6,0.6]
@@ -50,7 +58,7 @@ plot(df.timestamp_ms/1000,df.vol_ul,'LineWidth',2);
 
 ylabel('Cumulative Volume (uL)')
 xlabel('Time (s)')
-xlim([0,350])
+% xlim([310,312])
 title("Sampling 20ms:20ms:180ms on-time, 50 Reps each")
 
 %%
@@ -88,7 +96,7 @@ ylim([0,25])
 %% Fitting
 % Fit best line (y = m*x + b)
 p = polyfit(t_cal.Duration, t_cal.Cumulative_Vol, 1); % p(1): slope, p(2): intercept
-
+    
 % Predicted values
 y_fit = polyval(p, t_cal.Duration);
 
@@ -99,9 +107,9 @@ mape = mean(abs((t_cal.Cumulative_Vol - y_fit) ./ t_cal.Cumulative_Vol)) * 100;
 close all
 ax1 = draw.jaxes;
 ax1.Position = [0.2,0.2,0.3,0.3];
-plot(ax1, t_cal.Duration*1000, t_cal.Cumulative_Vol, 'o', 'DisplayName', '50 Rep Data');
+plot(ax1, t_cal.Duration*1000, t_cal.Cumulative_Vol, 'o', 'LineWidth',1.5,'Color','r', 'DisplayName', 'Flow Sensor');
 hold(ax1, 'on');
-plot(ax1, t_cal.Duration*1000, y_fit, '-','LineWidth',1.5, 'DisplayName', ...
+plot(ax1, t_cal.Duration*1000, y_fit, '-','LineWidth',1.5, 'Color','r','DisplayName', ...
     sprintf('Fit: y = %.2fx + %.2f', p(1), p(2)));
 ylabel("Dispensed Volume (uL)")
 xlabel("Pump on duration (ms)")
@@ -109,3 +117,24 @@ ylim([0,25])
 legend(ax1, 'show')
 title(ax1, "Octagon 3 Pump 8-1 Calibration Curve")
 grid on
+hold on
+
+% Fitting of weighing mathods
+% Fit best line (y = m*x + b)
+p = polyfit(T.Duration, T.Vol_uL_weighing_1, 1); % p(1): slope, p(2): intercept
+
+% Predicted values
+y_fit = polyval(p, T.Duration);
+
+% Calculate percentage error (Mean Absolute Percentage Error, MAPE)
+mape = mean(abs((T.Vol_uL_weighing_1 - y_fit) ./ T.Vol_uL_weighing_1)) * 100;
+
+% Plot data and fit
+plot(ax1, T.Duration*1000, T.Vol_uL_weighing_1, 'o','LineWidth',1.5,'Color','b', 'DisplayName', 'Weighing');
+hold(ax1, 'on');
+plot(ax1, T.Duration*1000, y_fit, '-','LineWidth',1.5,'Color','b', 'DisplayName', ...
+    sprintf('Fit: y = %.2fx + %.2f', p(1), p(2)));
+ylabel("Dispensed Volume (uL)")
+xlabel("Pump on duration (ms)")
+ylim([0,25])
+legend(ax1, 'show')
